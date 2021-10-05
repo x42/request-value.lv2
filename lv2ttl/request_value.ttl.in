@@ -1,0 +1,59 @@
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
+
+@prefix reqval: <http://gareus.org/oss/lv2/@LV2NAME@#> .
+
+<http://gareus.org/rgareus#me>
+	a foaf:Person;
+	foaf:name "Robin Gareus";
+	foaf:mbox <mailto:robin@gareus.org>;
+	foaf:homepage <http://gareus.org/> .
+
+reqval:booltest
+	a lv2:Parameter ;
+	rdfs:label "Give me a B, give me an O, give me an O, give me a L!" ;
+	rdfs:comment "Test dialog with boolean return value" ;
+	rdfs:range atom:Bool ;
+	lv2:default 0 .
+
+<http://gareus.org/oss/lv2/@LV2NAME@>
+	a lv2:Plugin, doap:Project, lv2:UtilityPlugin;
+	doap:license <http://usefulinc.com/doap/licenses/gpl>;
+	doap:maintainer <http://gareus.org/rgareus#me>;
+	doap:name "Request Value Test";
+	@VERSION@
+	lv2:optionalFeature lv2:hardRTCapable;
+	lv2:requiredFeature urid:map;
+
+	patch:writable reqval:booltest;
+
+	lv2:port [
+		a atom:AtomPort, lv2:InputPort;
+		atom:bufferType atom:Sequence;
+		atom:supports atom:Object ;
+		atom:supports patch:Message ;
+		lv2:index 0;
+		lv2:symbol "control";
+		lv2:name "Control Input";
+		lv2:designation lv2:control ;
+	] , [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 1 ;
+		lv2:symbol "in" ;
+		lv2:name "In"
+	] , [
+		a lv2:AudioPort ,
+			lv2:OutputPort ;
+		lv2:index 2 ;
+		lv2:symbol "out" ;
+		lv2:name "Out"
+	]
+	.
