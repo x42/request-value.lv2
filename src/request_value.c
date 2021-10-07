@@ -30,6 +30,17 @@
 #include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 
+/* custom extension */
+#define LV2_DIALOGMESSAGE_URI "http://ardour.org/lv2/dialog_message"
+
+typedef struct {
+  void (*free_msg)(char const* msg);
+
+  char const* msg;
+  bool requires_return;
+
+} LV2_Dialog_Message;
+
 typedef struct {
 	LV2_URID atom_Blank;
 	LV2_URID atom_Object;
@@ -40,7 +51,15 @@ typedef struct {
 	LV2_URID patch_property;
 	LV2_URID patch_value;
 	LV2_URID m_bool_test;
+	LV2_URID m_ack_test;
 } ReqValURIs;
+
+static void non_free (char const* msg)
+{
+#if 0 // statically allocated message
+	free (msg);
+#endif
+}
 
 typedef struct {
 	/* ports */
@@ -55,6 +74,9 @@ typedef struct {
 
 	/* request param */
 	LV2UI_Request_Value* request_value;
+	LV2_Feature**        features;
+	LV2_Feature          dialog_feature;
+	LV2_Dialog_Message   dialog_message;
 
 	/* settings, config */
 	ReqValURIs uris;
@@ -78,6 +100,7 @@ map_uris (LV2_URID_Map* map, ReqValURIs* uris)
 	uris->patch_property = map->map (map->handle, LV2_PATCH__property);
 	uris->patch_value    = map->map (map->handle, LV2_PATCH__value);
 	uris->m_bool_test    = map->map (map->handle, REQVAL_URI "#booltest");
+	uris->m_ack_test     = map->map (map->handle, REQVAL_URI "#acktest");
 }
 
 static LV2_Handle
@@ -120,6 +143,16 @@ instantiate (const LV2_Descriptor*     descriptor,
 	self->sample_rate  = rate;
 	self->sample_cnt   = 0;
 	self->request_sent = false;
+
+	self->dialog_message.msg = NULL;
+	self->dialog_message.requires_return = true;
+	self->dialog_message.free_msg = non_free;
+
+	self->dialog_feature.URI  = LV2_DIALOGMESSAGE_URI;
+	self->dialog_feature.data = &self->dialog_message;
+
+	self->features = (LV2_Feature**)calloc(2, sizeof(LV2_Feature*));
+	self->features[0] = &self->dialog_feature;
 
 	return (LV2_Handle)self;
 }
@@ -226,7 +259,9 @@ run (LV2_Handle instance, uint32_t n_samples)
 
 	if (!self->request_sent && self->sample_cnt > 2 * self->sample_rate) {
 		self->request_sent = true;
-		self->request_value->request (self->request_value->handle, self->uris.m_bool_test, self->uris.atom_Bool, NULL);
+		self->dialog_message.msg = "FOO BAR!";
+		self->dialog_message.requires_return = false;
+		self->request_value->request (self->request_value->handle, self->uris.m_bool_test, self->uris.atom_Bool, (const LV2_Feature * const*)self->features);
 	}
 
 	self->sample_cnt += n_samples;
