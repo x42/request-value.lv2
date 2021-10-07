@@ -31,6 +31,7 @@ reqval:booltest
 	@VERSION@
 	lv2:optionalFeature lv2:hardRTCapable;
 	lv2:requiredFeature urid:map;
+	lv2:requiredFeature ui:requestValue;
 
 	patch:writable reqval:booltest;
 
